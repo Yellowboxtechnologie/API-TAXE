@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { Admin } = require("../models");
+const { Admin, Operator } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -16,7 +16,8 @@ const login = async (req, res) => {
     if (!password) {
       return res.status(400).json({
         status: "error",
-        message: "Veuillez entrer votre mot de passe pour accéder à votre compte.",
+        message:
+          "Veuillez entrer votre mot de passe pour accéder à votre compte.",
       });
     }
 
@@ -33,7 +34,8 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         status: "error",
-        message: "Le mot de passe saisi est incorrect. Merci de réessayer ou de réinitialiser votre mot de passe si nécessaire.",
+        message:
+          "Le mot de passe saisi est incorrect. Merci de réessayer ou de réinitialiser votre mot de passe si nécessaire.",
       });
     }
 
@@ -60,7 +62,8 @@ const login = async (req, res) => {
     appendErrorLog(`ERROR LOGIN ADMIN: ${error}`);
     return res.status(500).json({
       status: "error",
-      message: "Une erreur est survenue lors de la connexion. Veuillez vérifier vos informations ou réessayer plus tard.",
+      message:
+        "Une erreur est survenue lors de la connexion. Veuillez vérifier vos informations ou réessayer plus tard.",
     });
   }
 };
@@ -104,9 +107,267 @@ const create = async (req, res) => {
     appendErrorLog(`ERROR CREATE ADMIN: ${error}`);
     return res.status(500).json({
       status: "error",
-      message: "Une erreur est survenue lors de la création du compte administrateur. Veuillez vérifier vos informations ou réessayer plus tard.",
+      message:
+        "Une erreur est survenue lors de la création du compte administrateur. Veuillez vérifier vos informations ou réessayer plus tard.",
     });
   }
 };
 
-module.exports = { login, create };
+const createOperator = async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez saisir le nom de l'opérateur pour continuer.",
+      });
+    }
+
+    if (!phone) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Veuillez saisir le numéro de téléphone de l'opérateur pour continuer.",
+      });
+    }
+
+    const exists = await Operator.findOne({ where: { phone } });
+    if (exists) {
+      return res.status(409).json({
+        status: "error",
+        message: "Un compte opérateur avec ce numéro de téléphone existe déjà.",
+      });
+    }
+
+    await Operator.create({
+      name,
+      phone,
+    });
+    return res.status(200).json({
+      status: "success",
+      message: "Le compte opérateur a bien été créé avec succès.",
+    });
+  } catch (error) {
+    console.error(`ERROR CREATE OPERATOR: ${error}`);
+    appendErrorLog(`ERROR CREATE OPERATOR: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Une erreur est survenue lors de la création du compte opérateur. Veuillez vérifier vos informations ou réessayer plus tard.",
+    });
+  }
+};
+
+const updateOperator = async (req, res) => {
+  try {
+    const { operatorId, name, phone } = req.body;
+
+    if (!operatorId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir l'ID de l'opérateur.",
+      });
+    }
+
+    if (!name) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le nom de l'opérateur.",
+      });
+    }
+
+    if (!phone) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le numéro de téléphone de l'opérateur.",
+      });
+    }
+
+    const operator = await Operator.findOne({ where: { id: operatorId } });
+    if (!operator) {
+      return res.status(404).json({
+        status: "error",
+        message: "L'opérateur n'existe pas.",
+      });
+    }
+
+    operator.name = name;
+    operator.phone = phone;
+    await operator.save();
+    return res.status(200).json({
+      status: "success",
+      data: operator,
+      message:
+        "Les informations de l'opérateur ont bien été mis à jour avec succès.",
+    });
+  } catch (error) {
+    console.error(`ERROR UPDATE OPERATOR: ${error}`);
+    appendErrorLog(`ERROR UPDATE OPERATOR: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Une erreur est survenue lors de la mise à jour du compte opérateur.",
+    });
+  }
+};
+
+const disableOperator = async (req, res) => {
+  try {
+    const { operatorId } = req.body;
+
+    if (!operatorId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir l'ID de l'opérateur.",
+      });
+    }
+
+    const operator = await Operator.findOne({ where: { id: operatorId } });
+    if (!operator) {
+      return res.status(404).json({
+        status: "error",
+        message: "L'opérateur n'existe pas.",
+      });
+    }
+
+    operator.isActive = false;
+    await operator.save();
+    return res.status(200).json({
+      status: "success",
+      data: operator,
+      message: "Le compte de l'opérateur a bien été activé avec succès.",
+    });
+  } catch (error) {
+    console.error(`ERROR DISABLE OPERATOR: ${error}`);
+    appendErrorLog(`ERROR DISABLE OPERATOR: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Une erreur est survenue lors de la désactivation de l'opérateur.",
+    });
+  }
+};
+
+const activateOperator = async (req, res) => {
+  try {
+    const { operatorId } = req.body;
+
+    if (!operatorId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir l'ID de l'opérateur.",
+      });
+    }
+
+    const operator = await Operator.findOne({ where: { id: operatorId } });
+    if (!operator) {
+      return res.status(404).json({
+        status: "error",
+        message: "L'opérateur n'existe pas.",
+      });
+    }
+
+    operator.isActive = true;
+    await operator.save();
+    return res.status(200).json({
+      status: "success",
+      data: operator,
+      message: "Le compte de l'opérateur a bien été activé avec succès.",
+    });
+  } catch (error) {
+    console.error(`ERROR ACTIVATE OPERATOR: ${error}`);
+    appendErrorLog(`ERROR ACTIVATE OPERATOR: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de l'activation de l'opérateur.",
+    });
+  }
+};
+
+const listOperators = async (req, res) => {
+  try {
+    const operators = await Operator.findAll();
+    const operatorsResponse = operators.map((operator) => {
+      return {
+        id: operator.id,
+        name: operator.name,
+        phone: operator.phone,
+        isActive: operator.isActive,
+      };
+    });
+    return res.status(200).json({
+      status: "success",
+      data: operatorsResponse,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST OPERATORS: ${error}`);
+    appendErrorLog(`ERROR LIST OPERATORS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des opérateurs.",
+    });
+  }
+};
+
+const listActiveOperators = async (req, res) => {
+  try {
+    const operators = await Operator.findAll({ where: { isActive: true } });
+    const operatorsResponse = operators.map((operator) => {
+      return {
+        id: operator.id,
+        name: operator.name,
+        phone: operator.phone,
+      };
+    });
+    return res.status(200).json({
+      status: "success",
+      data: operatorsResponse,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST ACTIVE OPERATORS: ${error}`);
+    appendErrorLog(`ERROR LIST ACTIVE OPERATORS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Une erreur est survenue lors de la liste des opérateurs actifs.",
+    });
+  }
+};
+
+const listInactiveOperators = async (req, res) => {
+  try {
+    const operators = await Operator.findAll({ where: { isActive: false } });
+    const operatorsResponse = operators.map((operator) => {
+      return {
+        id: operator.id,
+        name: operator.name,
+        phone: operator.phone,
+      };
+    });
+    return res.status(200).json({
+      status: "success",
+      data: operatorsResponse,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST INACTIVE OPERATORS: ${error}`);
+    appendErrorLog(`ERROR LIST INACTIVE OPERATORS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Une erreur est survenue lors de la liste des opérateurs inactifs.",
+    });
+  }
+};
+
+module.exports = {
+  login,
+  create,
+  createOperator,
+  updateOperator,
+  disableOperator,
+  activateOperator,
+  listOperators,
+  listActiveOperators,
+  listInactiveOperators,
+};

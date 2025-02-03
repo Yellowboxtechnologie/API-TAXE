@@ -182,6 +182,7 @@ Récupère l'historique des transactions d'un client après validation de son to
 
 # API Documentation - Delete Customer Account (Soft Delete)
 
+
 ## Endpoint
 `DELETE /api/customers/delete-account`
 
@@ -207,5 +208,252 @@ Effectue une suppression "douce" du compte client en anonymisant le numéro de t
 {
   "status": "success",
   "message": "Votre compte a été supprimé avec succès..."
+}
+```
+
+# API Documentation - Create Operator Account
+
+## Endpoint
+`POST /api/operators/create`
+
+## Description  
+Crée un nouveau compte opérateur après vérification de l'unicité du numéro de téléphone. Ce endpoint est généralement utilisé par les administrateurs pour ajouter de nouveaux opérateurs au système.
+
+---
+
+## Requête
+
+### Paramètres du corps (JSON)
+
+| Paramètre | Type   | Obligatoire | Description                          |
+|-----------|--------|-------------|--------------------------------------|
+| name      | string | Oui         | Nom complet de l'opérateur           |
+| phone     | string | Oui         | Numéro de téléphone de l'opérateur   |
+
+### Exemple de Requête
+```json
+{
+  "name": "John Doe",
+  "phone": "+243900000000"
+}
+```
+
+# API Documentation - Update Operator Account
+
+## Endpoint
+`PUT /api/operators/update`
+
+## Description  
+Met à jour les informations d'un opérateur existant (nom et numéro de téléphone) après vérification de l'existence du compte. Ce endpoint est généralement utilisé par les administrateurs pour modifier les détails d'un opérateur.
+
+---
+
+## Requête
+
+### Paramètres du corps (JSON)
+
+| Paramètre | Type   | Obligatoire | Description                          |
+|-----------|--------|-------------|--------------------------------------|
+| operatorId| int    | Oui         | ID de l'opérateur à modifier         |
+| name      | string | Oui         | Nouveau nom de l'opérateur           |
+| phone     | string | Oui         | Nouveau numéro de téléphone          |
+
+### Exemple de Requête
+```json
+{
+  "operatorId": 123,
+  "name": "John Doe Updated",
+  "phone": "+243900000001"
+}
+```
+
+# API Documentation - Disable Operator Account
+
+## Endpoint
+`PUT /api/operators/disable`
+
+## Description  
+Désactive un compte opérateur en mettant à jour le champ `isActive` à `false`. Ce endpoint est généralement utilisé par les administrateurs pour désactiver temporairement ou définitivement un opérateur.
+
+---
+
+## Requête
+
+### Paramètres du corps (JSON)
+
+| Paramètre | Type   | Obligatoire | Description                          |
+|-----------|--------|-------------|--------------------------------------|
+| operatorId| int    | Oui         | ID de l'opérateur à désactiver       |
+
+### Exemple de Requête
+```json
+{
+  "operatorId": 123
+}
+```
+# API Documentation - Activate Operator Account
+
+## Endpoint
+`PUT /api/operators/activate`
+
+## Description  
+Active un compte opérateur en mettant à jour le champ `isActive` à `true`. Ce endpoint est généralement utilisé par les administrateurs pour réactiver un opérateur précédemment désactivé.
+
+---
+
+## Requête
+
+### Paramètres du corps (JSON)
+
+| Paramètre | Type   | Obligatoire | Description                          |
+|-----------|--------|-------------|--------------------------------------|
+| operatorId| int    | Oui         | ID de l'opérateur à activer          |
+
+### Exemple de Requête
+```json
+{
+  "operatorId": 123
+}
+```
+
+# API Documentation - List Operators
+
+## Endpoint
+`GET /api/operators/list`
+
+## Description  
+Récupère la liste complète des opérateurs enregistrés dans le système. Ce endpoint est généralement utilisé par les administrateurs pour consulter les comptes opérateurs.
+
+---
+
+## Requête
+
+### Paramètres
+Aucun paramètre requis.
+
+---
+
+## Réponses
+
+### Succès (200 OK)
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 123,
+      "name": "John Doe",
+      "phone": "+243900000000",
+      "isActive": true
+    },
+    {
+      "id": 124,
+      "name": "Jane Smith",
+      "phone": "+243900000001",
+      "isActive": false
+    }
+  ]
+}
+```
+# API Documentation - List Active Operators
+
+## Endpoint
+`GET /api/operators/list-active`
+
+## Description  
+Récupère la liste des opérateurs actuellement actifs dans le système. Ce endpoint est utile pour obtenir une liste filtrée des opérateurs disponibles pour des opérations en temps réel.
+
+---
+
+## Requête
+
+### Paramètres
+Aucun paramètre requis.
+
+---
+
+## Réponses
+
+### Succès (200 OK)
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 123,
+      "name": "John Doe",
+      "phone": "+243900000000"
+    },
+    {
+      "id": 124,
+      "name": "Jane Smith",
+      "phone": "+243900000001"
+    }
+  ]
+}
+```
+
+# API Documentation - List Inactive Operators
+
+## Endpoint
+`GET /api/operators/list-inactive`
+
+## Description  
+Récupère la liste des opérateurs actuellement inactifs (désactivés) dans le système. Ce endpoint permet aux administrateurs de visualiser les comptes désactivés.
+
+---
+
+## Requête
+
+### Paramètres
+Aucun paramètre requis.
+
+---
+
+## Réponses
+
+### Succès (200 OK)
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 125,
+      "name": "Bob Johnson",
+      "phone": "+243900000002"
+    },
+    {
+      "id": 126,
+      "name": "Alice Brown",
+      "phone": "+243900000003"
+    }
+  ]
+}
+```
+
+# API Documentation - Admin Login
+
+## Endpoint
+`POST /api/admins/login`
+
+## Description  
+Authentifie un administrateur via son email et mot de passe. Retourne un token JWT et des informations basiques en cas de succès.
+
+---
+
+## Requête
+
+### Paramètres du corps (JSON)
+
+| Paramètre | Type   | Obligatoire | Description          |
+|-----------|--------|-------------|----------------------|
+| email     | string | Oui         | Email de l'admin     |
+| password  | string | Oui         | Mot de passe         |
+
+### Exemple
+```json
+{
+  "email": "admin@example.com",
+  "password": "motdepasse123"
 }
 ```
