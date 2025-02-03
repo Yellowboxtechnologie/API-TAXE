@@ -65,7 +65,6 @@ const login = async (req, res) => {
     const token = jwt.sign(
       {
         id: customer.id,
-        role: "isCustomer",
       },
       process.env.JWT_SECRET
     );
@@ -472,7 +471,8 @@ const veriryOtp = async (req, res) => {
     if (!response.ok) {
       return res.status(response.status).json({
         status: "error",
-        message: "L'envoi du code de verification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
+        message:
+          "L'envoi du code de verification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
         details: responseBody,
       });
     }
