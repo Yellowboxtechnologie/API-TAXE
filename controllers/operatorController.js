@@ -595,63 +595,48 @@ const transactions = async (req, res) => {
 
 const createMerchant = async (req, res) => {
   try {
+    const token = req.headers.authorization;
     const {
-      operatorId,
       subcategoryId,
       name,
       phone,
       address,
       cni,
       rccm,
-      activity,
     } = req.body;
-
-    if (!operatorId) {
-      return res.status(400).json({
-        status: "error",
-        message: "Veuillez fournir l'ID de l'opérateur.",
-      });
-    }
 
     if (!name) {
       return res.status(400).json({
         status: "error",
-        message: "Veuillez fournir le nom de l'opérateur.",
+        message: "Veuillez fournir le nom du marchant.",
       });
     }
 
     if (!phone) {
       return res.status(400).json({
         status: "error",
-        message: "Veuillez fournir le numéro de téléphone de l'opérateur.",
+        message: "Veuillez fournir le numéro du marchant.",
       });
     }
 
     if (!address) {
       return res.status(400).json({
         status: "error",
-        message: "Veuillez fournir l'adresse de l'opérateur.",
+        message: "Veuillez fournir l'adresse du marchant.",
       });
     }
 
     if (!cni) {
       return res.status(400).json({
         status: "error",
-        message: "Veuillez fournir le numéro de CNI de l'opérateur.",
+        message: "Veuillez fournir le numéro de CNI du marchant.",
       });
     }
 
     if (!rccm) {
       return res.status(400).json({
         status: "error",
-        message: "Veuillez fournir le numéro de RCCM de l'opérateur.",
-      });
-    }
-
-    if (!activity) {
-      return res.status(400).json({
-        status: "error",
-        message: "Veuillez fournir l'activité de l'opérateur.",
+        message: "Veuillez fournir le numéro de RCCM du marchant.",
       });
     }
 
@@ -662,11 +647,56 @@ const createMerchant = async (req, res) => {
       });
     }
 
-    const operator = await Operator.findByPk(operatorId);
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Votre session a expiré. Veuillez vous reconnecter.",
+      });
+    }
+
+    // Vérifie si l'en-tête commence par "Bearer "
+    if (!token.startsWith("Bearer ")) {
+      return res.status(401).json({
+        status: "error",
+        message: "Format de token invalide.",
+      });
+    }
+
+    // Extrait le token en supprimant le préfixe "Bearer "
+    const customToken = token.substring(7);
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(customToken, process.env.JWT_SECRET);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          status: "error",
+          message: "Votre session a expiré. Veuillez vous reconnecter.",
+        });
+      }
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    if (!decodedToken) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    const currentUserId = decodedToken.id;
+
+    const operator = await Operator.findByPk(currentUserId);
     if (!operator) {
       return res.status(404).json({
         status: "error",
-        message: "Opérateur non trouvé.",
+        message: "Aucun compte correspondant trouvé. Veuillez vérifier vos informations ou créer un nouveau compte.",
       });
     }
 
@@ -688,7 +718,7 @@ const createMerchant = async (req, res) => {
     }
 
     await Customer.create({
-      operatorId: operatorId,
+      operatorId: operator.id,
       subcategoryId: subcategoryId,
       name,
       phone,
@@ -700,7 +730,7 @@ const createMerchant = async (req, res) => {
 
     return res.status(201).json({
       status: "success",
-      message: "Opérateur créé avec succès.",
+      message: "Le marchand à bien été crée avec succès.",
     });
   } catch (error) {
     appendErrorLog(`ERROR CREATE OPERATOR: `, error);
