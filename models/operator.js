@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       this.hasMany(models.Transaction, { foreignKey: 'operatorId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+      this.hasMany(models.Merchant, { foreignKey: 'operatorId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
     }
   }
   Operator.init({

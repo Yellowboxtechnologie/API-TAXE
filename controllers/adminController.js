@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { Admin, Operator } = require("../models");
+const { Admin, Operator, Category, SubCategory } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -92,14 +92,13 @@ const create = async (req, res) => {
       });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const admin = await Admin.create({
+    await Admin.create({
       name,
       email,
       password: hashedPassword,
     });
     return res.status(200).json({
       status: "success",
-      data: admin,
       message: "Le compte administrateur a bien été créé avec succès.",
     });
   } catch (error) {

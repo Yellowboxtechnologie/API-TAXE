@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { Operator, Transaction, PaymentMethod } = require("../models");
+const { v4: uuidv4 } = require("uuid");
+const { Operator, Transaction, PaymentMethod, Merchant, SubCategory } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -119,7 +120,7 @@ const lastTransactions = async (req, res) => {
     const transactions = await Transaction.findAll({
       where: { operatorId },
       attributes: [
-        "customerId",
+        "merchantId",
         "operatorId",
         "paymentId",
         "ticket",
@@ -128,8 +129,8 @@ const lastTransactions = async (req, res) => {
       ],
       include: [
         {
-          model: Customer,
-          foreignKey: "customerId",
+          model: Merchant,
+          foreignKey: "merchantId",
           attributes: ["id", "name", "phone", "address"],
         },
         {
@@ -171,9 +172,9 @@ const lastTransactions = async (req, res) => {
       } ${year}`;
 
       return {
-        name: transaction.customer.name,
-        phone: transaction.customer.phone,
-        address: transaction.customer.address,
+        name: transaction.merchant.name,
+        phone: transaction.merchant.phone,
+        address: transaction.merchant.address,
         paymentMethod: transaction.paymentMethod.name,
         ticket: transaction.ticket,
         amount: transaction.amount,
@@ -248,7 +249,7 @@ const transactions = async (req, res) => {
     const transactions = await Transaction.findAll({
       where: { operatorId },
       attributes: [
-        "customerId",
+        "merchantId",
         "operatorId",
         "paymentId",
         "ticket",
@@ -257,8 +258,8 @@ const transactions = async (req, res) => {
       ],
       include: [
         {
-          model: Customer,
-          foreignKey: "customerId",
+          model: Merchant,
+          foreignKey: "merchantId",
           attributes: ["id", "name", "phone", "address"],
         },
         {
@@ -299,9 +300,9 @@ const transactions = async (req, res) => {
       } ${year}`;
 
       return {
-        name: transaction.customer.name,
-        phone: transaction.customer.phone,
-        address: transaction.customer.address,
+        name: transaction.merchant.name,
+        phone: transaction.merchant.phone,
+        address: transaction.merchant.address,
         paymentMethod: transaction.paymentMethod.name,
         ticket: transaction.ticket,
         amount: transaction.amount,
@@ -325,4 +326,114 @@ const transactions = async (req, res) => {
   }
 };
 
-module.exports = { login, transactions, lastTransactions };
+const createMerchant = async (req, res) => {
+  try {
+    const { operatorId, subcategoryId, name, phone, address, cni, rccm, activity } = req.body;
+    
+    if (!operatorId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir l'ID de l'opérateur.",
+      });
+    }
+
+    if (!name) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le nom de l'opérateur.",
+      });
+    }
+
+    if (!phone) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le numéro de téléphone de l'opérateur.",
+      });
+    }
+
+    if (!address) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir l'adresse de l'opérateur.",
+      });
+    }
+
+    if (!cni) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le numéro de CNI de l'opérateur.",
+      });
+    }
+
+    if (!rccm) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le numéro de RCCM de l'opérateur.",
+      });
+    }
+
+    if (!activity) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir l'activité de l'opérateur.",
+      });
+    }
+
+    if (!subcategoryId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir l'ID de la sous-activité.",
+      });
+    }
+
+    const operator = await Operator.findByPk(operatorId);
+    if (!operator) {
+      return res.status(404).json({
+        status: "error",
+        message: "Opérateur non trouvé.",
+      });
+    }
+
+    const merchant = await Merchant.findOne({ where: { phone } });
+    if (merchant) {
+      return res.status(409).json({
+        status: "error",
+        message: "Un compte opérateur avec ce numéro de téléphone existe déjà.",
+      });
+    }
+
+    const subActivity  = await SubCategory.findByPk(subcategoryId);
+
+    if (!subActivity) {
+      return res.status(404).json({
+        status: "error",
+        message: "Activité non trouvé.",
+      });
+    }
+
+    await Customer.create({
+      operatorId: operatorId,
+      subcategoryId: subcategoryId,
+      name,
+      phone,
+      address,
+      cni,
+      rccm,
+      qrcode: uuidv4(),
+    });
+
+    return res.status(201).json({
+      status: "success",
+      message: "Opérateur créé avec succès.",
+    });
+  } catch (error) {
+    appendErrorLog(`ERROR CREATE OPERATOR: `, error);
+    console.log(`ERROR CREATE OPERATOR: `, error);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la création de l'opérateur.",
+    });
+  }
+}
+
+module.exports = { login, transactions, lastTransactions, createMerchant };

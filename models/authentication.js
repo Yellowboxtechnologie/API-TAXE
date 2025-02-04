@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Authentication.init({
-    customerId: DataTypes.INTEGER,
+    merchantId: DataTypes.INTEGER,
     code: DataTypes.STRING,
     isUsed: DataTypes.BOOLEAN
   }, {

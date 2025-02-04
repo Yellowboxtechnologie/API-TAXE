@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
-const { Customer, Transaction, Authentication } = require("../models");
+const { Merchant, Transaction, Authentication } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -23,7 +23,7 @@ const login = async (req, res) => {
       });
     }
 
-    const customer = await Customer.findOne({
+    const merchant  = await Merchant.findOne({
       where: { phone },
       attributes: [
         "id",
@@ -37,7 +37,7 @@ const login = async (req, res) => {
       ],
     });
 
-    if (!customer) {
+    if (!merchant) {
       return res.status(409).json({
         status: "error",
         message:
@@ -45,7 +45,7 @@ const login = async (req, res) => {
       });
     }
 
-    if (!customer.isActive) {
+    if (!merchant.isActive) {
       return res.status(401).json({
         status: "error",
         message:
@@ -53,7 +53,7 @@ const login = async (req, res) => {
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, customer.password);
+    const isPasswordValid = await bcrypt.compare(password, merchant.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         status: "error",
@@ -64,28 +64,28 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       {
-        id: customer.id,
+        id: merchant.id,
       },
       process.env.JWT_SECRET
     );
 
-    const customerResponse = {
-      name: customer.name,
-      address: customer.address,
-      cni: customer.cni,
-      rccm: customer.rccm,
-      activity: customer.activity,
-      qrcode: customer.qrcode,
+    const merchantResponse = {
+      name: merchant.name,
+      address: merchant.address,
+      cni: merchant.cni,
+      rccm: merchant.rccm,
+      activity: merchant.activity,
+      qrcode: merchant.qrcode,
       token: token,
     };
 
     return res.status(200).json({
       status: "success",
-      data: customerResponse,
+      data: merchantResponse,
     });
   } catch (error) {
-    console.error(`ERROR LOGIN CUSTOMER: ${error}`);
-    appendErrorLog(`ERROR LOGIN CUSTOMER: ${error}`);
+    console.error(`ERROR LOGIN MERCHANT: ${error}`);
+    appendErrorLog(`ERROR LOGIN MERCHANT: ${error}`);
     return res.status(500).json({
       status: "error",
       message:
@@ -131,10 +131,10 @@ const updatePassword = async (req, res) => {
         .json({ status: "error", message: "Token invalide." });
     }
 
-    const customerId = decodedToken.id;
+    const merchantId = decodedToken.id;
 
-    const customer = await Customer.findByPk(customerId);
-    if (!customer) {
+    const merchant = await Merchant.findByPk(merchantId);
+    if (!merchant) {
       return res.status(404).json({
         status: "error",
         message:
@@ -158,7 +158,7 @@ const updatePassword = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(
       oldPassword,
-      customer.password
+      merchant.password
     );
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -170,15 +170,15 @@ const updatePassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await customer.update({ password: hashedPassword });
+    await merchant.update({ password: hashedPassword });
     return res.status(200).json({
       status: "success",
       message:
         "Votre mot de passe a été mis à jour avec succès ! Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
     });
   } catch (error) {
-    console.error(`ERROR UPDATE PASSWORD CUSTOMER: ${error}`);
-    appendErrorLog(`ERROR UPDATE PASSWORD CUSTOMER: ${error}`);
+    console.error(`ERROR UPDATE PASSWORD MERCHANT: ${error}`);
+    appendErrorLog(`ERROR UPDATE PASSWORD MERCHANT: ${error}`);
     return res.status(500).json({
       status: "error",
       message:
@@ -222,9 +222,9 @@ const updateToken = async (req, res) => {
         .json({ status: "error", message: "Token invalide." });
     }
 
-    const customerId = decodedToken.id;
-    const existingCustomer = await Customer.findByPk(customerId);
-    if (!existingCustomer) {
+    const merchantId = decodedToken.id;
+    const existingMerchant = await Merchant.findByPk(merchantId);
+    if (!existingMerchant) {
       return res.status(404).json({
         status: "error",
         message: "Ce compte n'existe pas.",
@@ -238,10 +238,10 @@ const updateToken = async (req, res) => {
       });
     }
 
-    await Customer.update(
+    await Merchant.update(
       { token },
       {
-        where: { id: customerId },
+        where: { id: merchantId },
       }
     );
 
@@ -250,8 +250,8 @@ const updateToken = async (req, res) => {
       message: "Le token a été mis à jour avec succès.",
     });
   } catch (error) {
-    console.error(`ERROR UPDATE CUSTOMER TOKEN: ${error}`);
-    appendErrorLog(`ERROR UPDATE CUSTOMER TOKEN: ${error.message}`);
+    console.error(`ERROR UPDATE MERCHANT TOKEN: ${error}`);
+    appendErrorLog(`ERROR UPDATE MERCHANT TOKEN: ${error.message}`);
     return res.status(500).json({
       status: "error",
       message:
@@ -292,10 +292,10 @@ const transactions = async (req, res) => {
       });
     }
 
-    const customerId = decodedToken.id;
+    const merchantId = decodedToken.id;
 
-    const customer = await Customer.findByPk(customerId);
-    if (!customer) {
+    const merchant = await Merchant.findByPk(merchantId);
+    if (!merchant) {
       return res.status(404).json({
         status: "error",
         message:
@@ -304,7 +304,7 @@ const transactions = async (req, res) => {
     }
 
     const transactions = await Transaction.findAll({
-      where: { customerId },
+      where: { merchantId },
       attributes: ["ticket", "amount", "createdAt"],
       order: [["createdAt", "DESC"]],
     });
@@ -322,8 +322,8 @@ const transactions = async (req, res) => {
       data: response,
     });
   } catch (error) {
-    console.error(`ERROR TRANSACTION CUSTOMER: ${error}`);
-    appendErrorLog(`ERROR TRANSACTION CUSTOMER: ${error.message}`);
+    console.error(`ERROR TRANSACTION MERCHANT: ${error}`);
+    appendErrorLog(`ERROR TRANSACTION MERCHANT: ${error.message}`);
     return res.status(500).json({
       status: "error",
       message:
@@ -363,10 +363,10 @@ const destroy = async (req, res) => {
       });
     }
 
-    const customerId = decodedToken.id;
+    const merchantId = decodedToken.id;
 
-    const customer = await Customer.findByPk(customerId);
-    if (!customer) {
+    const merchant = await Merchant.findByPk(merchantId);
+    if (!merchant) {
       return res.status(404).json({
         status: "error",
         message:
@@ -374,15 +374,15 @@ const destroy = async (req, res) => {
       });
     }
 
-    const newPhone = `DELETED_${customer.phone}`;
+    const newPhone = `DELETED_${merchant.phone}`;
 
-    await Customer.update(
+    await Merchant.update(
       {
         phone: newPhone,
       },
       {
         where: {
-          id: customerId,
+          id: merchantId,
         },
       }
     );
@@ -392,8 +392,8 @@ const destroy = async (req, res) => {
         "Votre compte a été supprimé avec succès. Nous espérons vous revoir bientôt !",
     });
   } catch (error) {
-    console.error(`ERROR DELETE CUSTOMER: ${error}`);
-    appendErrorLog(`ERROR DELETE CUSTOMER: ${error}`);
+    console.error(`ERROR DELETE MERCHANT: ${error}`);
+    appendErrorLog(`ERROR DELETE MERCHANT: ${error}`);
     return res.status(500).json({
       status: "error",
       message:
@@ -414,7 +414,7 @@ const veriryOtp = async (req, res) => {
     }
 
     // Recherche du client associé au QR code
-    const customer = await Customer.findOne({
+    const merchant = await Merchant.findOne({
       attributes: [
         "id",
         "uuid",
@@ -429,7 +429,7 @@ const veriryOtp = async (req, res) => {
       where: { uuid: code },
     });
 
-    if (!customer) {
+    if (!merchant) {
       return res.status(404).json({
         status: "error",
         message:
@@ -437,7 +437,7 @@ const veriryOtp = async (req, res) => {
       });
     }
 
-    if (customer.isActive) {
+    if (merchant.isActive) {
       return res.status(400).json({
         status: "error",
         message:
@@ -446,7 +446,7 @@ const veriryOtp = async (req, res) => {
     }
 
     // Vérifier si le code est correct
-    const otpCode = customer.uuid;
+    const otpCode = merchant.uuid;
     if (otpCode !== code) {
       return res.status(400).json({
         status: "error",
@@ -455,7 +455,7 @@ const veriryOtp = async (req, res) => {
     }
 
     // Supprimer 00242  au debut du phone
-    const newPhone = customer.phone;
+    const newPhone = merchant.phone;
 
     // Préparation du message à envoyer
     const message = `Votre numéro d'enregistrement est : ${otpCode}. Ne le partagez avec personne pour des raisons de securite.`;
@@ -478,7 +478,7 @@ const veriryOtp = async (req, res) => {
     }
 
     // Génération d'un token JWT pour l'utilisateur
-    const token = jwt.sign({ id: customer.id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: merchant.id }, process.env.JWT_SECRET, {
       expiresIn: "5m",
     });
 
@@ -564,8 +564,8 @@ const vatidateOtp = async (req, res) => {
 
     const currentUserId = decodedToken.id;
 
-    const existingCustomer = await Customer.findByPk(currentUserId);
-    if (!existingCustomer) {
+    const existingMerchant = await Merchant.findByPk(currentUserId);
+    if (!existingMerchant) {
       return res.status(404).json({
         status: "error",
         message:
@@ -576,7 +576,7 @@ const vatidateOtp = async (req, res) => {
     // Vérifie si un code OTP non utilisé correspond au client et au code fourni
     const authenticationCode = await Authentication.findOne({
       where: {
-        customerId: currentUserId,
+        merchantId: currentUserId,    
         code: code,
         isUsed: false,
       },
@@ -594,8 +594,8 @@ const vatidateOtp = async (req, res) => {
     authenticationCode.isUsed = true;
     await authenticationCode.save();
 
-    const tokenCustomer = jwt.sign(
-      { id: existingCustomer.id },
+    const tokenMerchant = jwt.sign(
+      { id: existingMerchant.id },
       process.env.JWT_SECRET
     );
 
@@ -605,7 +605,7 @@ const vatidateOtp = async (req, res) => {
       message:
         "Votre code OTP a été vérifié avec succès. Vous pouvez maintenant poursuivre.",
       data: {
-        token: tokenCustomer,
+        token: tokenMerchant,
       },
     });
   } catch (error) {

@@ -10,10 +10,8 @@ const helmet = require("helmet");
 const fs = require("fs");
 const permissionsPolicy = require("permissions-policy");
 const adminRoutes = require("./routes/adminRoutes");
-const customerRoutes = require("./routes/customerRoutes");
+const merchantRoutes = require("./routes/merchantRoutes");
 const operatorRoutes = require("./routes/operatorRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
-const subcategoryRoutes = require("./routes/subcategoryRoutes");
 
 // Init express app
 const app = express();
@@ -55,10 +53,8 @@ app.use(
 
 // Routes
 app.use("/api/v1/admin", adminRoutes);
-app.use("/api/v1/customer", customerRoutes);
+app.use("/api/v1/merchant", merchantRoutes);
 app.use("/api/v1/operator", operatorRoutes);
-/* app.use("/api/v1/category", categoryRoutes);
-app.use("/api/v1/subcategory", subcategoryRoutes); */
 
 // The error handler must be registered after all controllers
 Sentry.setupExpressErrorHandler(app);

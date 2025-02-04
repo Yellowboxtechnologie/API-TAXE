@@ -1,15 +1,17 @@
 const express = require("express");
 const adminController = require("../controllers/adminController");
+const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
 
 router.post("/login", adminController.login);
 router.post("/create", adminController.create);
-router.post("/create-operator", adminController.createOperator);
-router.put("/update-operator", adminController.updateOperator);
-router.put("/disable-operator", adminController.disableOperator);
-router.put("/activate-operator", adminController.activateOperator);
-router.get("/list-operators", adminController.listOperators);
-router.get("/list-active-operators", adminController.listActiveOperators);
-router.get("/list-inactive-operators", adminController.listInactiveOperators);
+router.post("/create-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.createOperator);
+router.put("/update-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.updateOperator);
+router.put("/disable-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.disableOperator);
+router.put("/activate-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.activateOperator);
+router.get("/list-operators", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.listOperators);
+router.get("/list-active-operators", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.listActiveOperators);
+router.get("/list-inactive-operators", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.listInactiveOperators);
+router.post("/create-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.createOperator);
 
 module.exports = router;

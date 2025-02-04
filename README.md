@@ -1,3 +1,16 @@
+# API Documentation - Authentication Middlewares & Operator Management
+
+## Table of Contents
+1. [Authentication Middlewares](#authentication-middlewares)   
+   - [isAdmin](#isadmin)  
+   - [isMerchant](#ismerchant)  
+   - [isOperator](#isoperator)  
+2. [Create Operator Endpoint](#create-operator-endpoint)  
+3. [Security Considerations](#security-considerations)  
+4. [Error Handling](#error-handling)  
+5. [Examples](#examples)  
+
+
 # API Documentation - Customer Login
 
 ## Endpoint
@@ -455,5 +468,25 @@ Authentifie un administrateur via son email et mot de passe. Retourne un token J
 {
   "email": "admin@example.com",
   "password": "motdepasse123"
+}
+```
+
+## 📌 Requête pour créer un opérateur
+
+### 📍 Endpoint
+`POST /create-operator`
+
+### 🔑 Headers
+```json
+{
+  "Authorization": "Bearer VOTRE_TOKEN_Ici",
+  "Content-Type": "application/json"
+}
+```
+### 📝 Body
+```json
+{
+  "name": "Nom de l'opérateur",
+  "phone": "+33612345678"
 }
 ```
