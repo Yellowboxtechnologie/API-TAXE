@@ -11,11 +11,14 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      this.belongsTo(models.Merchant, { foreignKey: 'merchantId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+      this.belongsTo(models.Operator, { foreignKey: 'operatorId', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
     }
   }
   Authentication.init({
     merchantId: DataTypes.INTEGER,
-    code: DataTypes.STRING,
+    operatorId: DataTypes.INTEGER,
+    code: DataTypes.INTEGER,
     isUsed: DataTypes.BOOLEAN
   }, {
     sequelize,

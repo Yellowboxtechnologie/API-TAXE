@@ -5,7 +5,6 @@ const router = express.Router();
 
 router.post("/login", adminController.login);
 router.post("/create", adminController.create);
-router.post("/create-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.createOperator);
 router.put("/update-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.updateOperator);
 router.put("/disable-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.disableOperator);
 router.put("/activate-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.activateOperator);

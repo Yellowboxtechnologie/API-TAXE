@@ -599,15 +599,15 @@ const vatidateOtp = async (req, res) => {
       process.env.JWT_SECRET
     );
 
-    // Réponse avec succès
-    return res.status(200).json({
-      status: "success",
-      message:
-        "Votre code OTP a été vérifié avec succès. Vous pouvez maintenant poursuivre.",
-      data: {
-        token: tokenMerchant,
-      },
-    });
+      // Réponse avec succès
+      return res.status(200).json({
+        status: "success",
+        message:
+          "Votre code OTP a été vérifié avec succès. Vous pouvez maintenant poursuivre.",
+        data: {
+          token: tokenMerchant,
+        },
+      });
   } catch (error) {
     console.error(`Error lors de la validation du code OTP: ${error}`);
     appendErrorLog(`Error lors de la validation du code OTP: ${error}`);

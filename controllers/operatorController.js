@@ -1,7 +1,15 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
-const { Operator, Transaction, PaymentMethod, Merchant, SubCategory } = require("../models");
+const {
+  Operator,
+  Transaction,
+  PaymentMethod,
+  Merchant,
+  SubCategory,
+  Authentication,
+} = require("../models");
+const { sequelize } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -29,6 +37,15 @@ const login = async (req, res) => {
         status: "error",
         message:
           "Identifiants invalides, veuillez réessayer plus tard ou contacter l'administrateur.",
+      });
+    }
+
+    // Vérifie si le mot de passe est null
+    if (!operator.password) {
+      return res.status(403).json({
+        status: "error",
+        message:
+          "Votre compte doit être confirmé avant de pouvoir accéder à l'application. Veuillez finaliser votre inscription en créant un mot de passe.",
       });
     }
 
@@ -68,6 +85,256 @@ const login = async (req, res) => {
     });
   }
 };
+
+const confirmAccount = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir votre numéro de téléphone pour vérification.",
+      });
+    }
+
+    const operator = await Operator.findOne({ where: { phone } });
+    if (!operator) {
+      return res.status(404).json({
+        status: "error",
+        message: "Aucun compte opérateur trouvé avec ce numéro de téléphone.",
+      });
+    }
+
+    const operatorPhone = operator.phone;
+
+    // Vérifier si un code OTP non utilisé existe déjà pour cet opérateur
+    let authentication = await Authentication.findOne({
+      where: { operatorId: operator.id, isUsed: false },
+    });
+
+    let codeOtp;
+
+    if (authentication) {
+      // Si un code existe déjà et n'a pas été utilisé, on le réutilise
+      codeOtp = authentication.code;
+    } else {
+      // Sinon, générer un NOUVEAU code OTP (toujours 4 chiffres, sans commencer par 0)
+      codeOtp = Math.floor(1000 + Math.random() * 9000);
+
+      // Créer un nouvel OTP
+      authentication = await Authentication.create(
+        {
+          operatorId: operator.id,
+          code: codeOtp,
+          isUsed: false,
+        },
+        { transaction }
+      );
+    }
+
+    // Préparation du message à envoyer
+    const message = `Votre code de confirmation est : ${codeOtp}. Ne le partagez avec personne pour des raisons de sécurité.`;
+
+    // Envoi du SMS via l'API Wirepick
+    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${operatorPhone}&text=${encodeURIComponent(
+      message
+    )}&from=YELLOWPAY`;
+
+    const response = await fetch(wirepickUrl);
+    const responseBody = await response.text();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        status: "error",
+        message: "L'envoi du code de vérification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
+        details: responseBody,
+      });
+    }
+    console.log(`response ok ${responseBody}`);
+
+    await transaction.commit();
+    return res.status(200).json({
+      status: "success",
+      message: "Le code de confirmation a été envoyé avec succès. Veuillez vérifier vos SMS pour confirmer votre compte.",
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error(`ERROR CONFIRM ACCOUNT: ${error}`);
+    appendErrorLog(`ERROR CONFIRM ACCOUNT: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la confirmation du compte.",
+    });
+  }
+};
+
+const validationAccount = async (req, res) => {
+  try {
+    const { code, phone } = req.body;
+    if(!phone) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le numéro de téléphone.",
+      });
+    }
+
+
+    const existingOperator = await Operator.findOne({ where: { phone } });
+    if (!existingOperator) {
+      return res.status(404).json({
+        status: "error",
+        message:
+          "Aucun compte correspondant trouvé. Veuillez vérifier vos informations ou créer un nouveau compte.",
+      });
+    }
+
+    const currentOperatorId = existingOperator.id;
+
+    if (!code) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le code de confirmation.",
+      });
+    }
+
+    const existingAuthentication = await Authentication.findOne({
+      where: {
+        operatorId: currentOperatorId,    
+        code: code,
+        isUsed: false,
+      },
+    });
+
+    if (!existingAuthentication) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Le code OTP que vous avez entré est incorrect, expiré ou a déjà été utilisé. Veuillez vérifier le code et réessayer, ou demandez un nouveau code OTP.",
+      });
+    }
+
+    // Marque le code comme utilisé
+    const authenticationCode = await Authentication.findByPk(existingAuthentication.id);
+    if (!authenticationCode) {
+      return res.status(404).json({
+        status: "error",
+        message: "Le code OTP n'existe pas.",
+      });
+    }
+    authenticationCode.isUsed = true;
+    await authenticationCode.save();
+
+     // Token JWT
+     const tokenUser = jwt.sign(
+      { id: existingOperator.id},
+      process.env.JWT_SECRET,
+    );
+
+    const response = {
+      name: existingOperator.name,
+      phone: existingOperator.phone,
+      token: tokenUser,
+    };
+
+    return res.status(200).json({
+      status: "success",
+      message: "Votre code OTP a été vérifié avec succès. Vous pouvez maintenant poursuivre.",
+      data: response,
+    });
+  } catch (error) {
+    console.error(`ERROR VALIDATION ACCOUNT: ${error}`);
+    appendErrorLog(`ERROR VALIDATION ACCOUNT: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la validation du compte.",
+    });
+  }
+}
+
+const updatePassword = async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { password } = req.body;
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Votre session a expiré. Veuillez vous reconnecter.",
+      });
+    }
+
+    // Vérifie si l'en-tête commence par "Bearer "
+    if (!token.startsWith("Bearer ")) {
+      return res.status(401).json({
+        status: "error",
+        message: "Format de token invalide.",
+      });
+    }
+
+    // Extrait le token en supprimant le préfixe "Bearer "
+    const customToken = token.substring(7);
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(customToken, process.env.JWT_SECRET);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          status: "error",
+          message: "Votre session a expiré. Veuillez vous reconnecter.",
+        });
+      }
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    if (!decodedToken) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    const currentOperatorId = decodedToken.id;
+
+    const existingOperator = await Operator.findByPk(currentOperatorId);
+    if (!existingOperator) {
+      return res.status(404).json({
+        status: "error",
+        message:
+          "Aucun compte correspondant trouvé. Veuillez vérifier vos informations ou créer un nouveau compte.",
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir votre nouveau mot de passe.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    existingOperator.password = hashedPassword;
+    await existingOperator.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Votre mot de passe a été crée avec succès, vous pouvez maintenant vous connecter.",
+    });
+  } catch (error) {
+    console.error(`ERROR UPDATE PASSWORD: ${error}`);
+    appendErrorLog(`ERROR UPDATE PASSWORD: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la mise à jour du mot de passe.",
+    });
+  }
+}
 
 const lastTransactions = async (req, res) => {
   try {
@@ -328,8 +595,17 @@ const transactions = async (req, res) => {
 
 const createMerchant = async (req, res) => {
   try {
-    const { operatorId, subcategoryId, name, phone, address, cni, rccm, activity } = req.body;
-    
+    const {
+      operatorId,
+      subcategoryId,
+      name,
+      phone,
+      address,
+      cni,
+      rccm,
+      activity,
+    } = req.body;
+
     if (!operatorId) {
       return res.status(400).json({
         status: "error",
@@ -402,7 +678,7 @@ const createMerchant = async (req, res) => {
       });
     }
 
-    const subActivity  = await SubCategory.findByPk(subcategoryId);
+    const subActivity = await SubCategory.findByPk(subcategoryId);
 
     if (!subActivity) {
       return res.status(404).json({
@@ -434,6 +710,14 @@ const createMerchant = async (req, res) => {
       message: "Une erreur est survenue lors de la création de l'opérateur.",
     });
   }
-}
+};
 
-module.exports = { login, transactions, lastTransactions, createMerchant };
+module.exports = {
+  login,
+  transactions,
+  lastTransactions,
+  createMerchant,
+  confirmAccount,
+  validationAccount,
+  updatePassword,
+};

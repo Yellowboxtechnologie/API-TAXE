@@ -11,7 +11,7 @@ module.exports = {
       },
       merchantId: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
           model: 'Merchants',
           key: 'id'
@@ -19,8 +19,18 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
+      operatorId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Operators',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      }, 
       code: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
         allowNull: false,
       },
       isUsed: {
