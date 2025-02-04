@@ -12,5 +12,7 @@ router.get("/list-operators", authMiddleware.verifyToken , authMiddleware.isAdmi
 router.get("/list-active-operators", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.listActiveOperators);
 router.get("/list-inactive-operators", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.listInactiveOperators);
 router.post("/create-operator", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.createOperator);
+router.post("/create-category", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.createCategory);
+router.post("/create-subcategory", authMiddleware.verifyToken , authMiddleware.isAdmin, adminController.createSubCategory);
 
 module.exports = router;

@@ -359,6 +359,90 @@ const listInactiveOperators = async (req, res) => {
   }
 };
 
+const createCategory = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        status: "error",
+        message: "Le nom de la catégorie est requis.",
+      });
+    }
+
+    // Vérifier si la catégorie existe déjà
+    const existingCategory = await Category.findOne({ where: { name } });
+    if (existingCategory) {
+      return res.status(400).json({
+        status: "error",
+        message: "Cette catégorie existe déjà.",
+      });
+    }
+
+    // Création de la catégorie
+   await Category.create({ name });
+
+    return res.status(201).json({
+      status: "success",
+      message: "Catégorie créée avec succès.",
+    });
+
+  } catch (error) {
+    console.error(`ERROR CREATE CATEGORY: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la création de la catégorie.",
+    });
+  }
+};
+
+const createSubCategory = async (req, res) => {
+  try {
+    const { name, categoryId } = req.body;
+
+    if (!name || !categoryId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Le nom de la sous-catégorie et l'ID de la catégorie sont requis.",
+      });
+    }
+
+    // Vérifier si la catégorie existe
+    const category = await Category.findByPk(categoryId);
+    if (!category) {
+      return res.status(404).json({
+        status: "error",
+        message: "La catégorie spécifiée n'existe pas.",
+      });
+    }
+
+    // Vérifier si la sous-catégorie existe déjà dans cette catégorie
+    const existingSubCategory = await SubCategory.findOne({ where: { name, categoryId } });
+    if (existingSubCategory) {
+      return res.status(400).json({
+        status: "error",
+        message: "Cette sous-catégorie existe déjà dans cette catégorie.",
+      });
+    }
+
+    // Création de la sous-catégorie
+    await SubCategory.create({ name, categoryId });
+
+    return res.status(201).json({
+      status: "success",
+      message: "Sous-catégorie créée avec succès.",
+    });
+
+  } catch (error) {
+    console.error(`ERROR CREATE SUBCATEGORY: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la création de la sous-catégorie.",
+    });
+  }
+};
+
+
 module.exports = {
   login,
   create,
@@ -369,4 +453,6 @@ module.exports = {
   listOperators,
   listActiveOperators,
   listInactiveOperators,
+  createCategory,
+  createSubCategory
 };
