@@ -9,9 +9,25 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      uuid: {
-        type: Sequelize.STRING,
-        allowNull: false
+      operatorId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Operators',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
+      subcategoryId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'SubCategories',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
       },
       isActive: {
         type: Sequelize.BOOLEAN,
@@ -34,17 +50,13 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
-      activity: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
       phone: {
         type: Sequelize.STRING,
         allowNull: false
       },
       password: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: true
       },
       qrcode: {
         type: Sequelize.STRING,

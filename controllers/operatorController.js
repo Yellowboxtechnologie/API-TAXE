@@ -717,7 +717,7 @@ const createMerchant = async (req, res) => {
       });
     }
 
-    await Customer.create({
+    await Merchant.create({
       operatorId: operator.id,
       subcategoryId: subcategoryId,
       name,

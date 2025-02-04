@@ -402,68 +402,68 @@ const destroy = async (req, res) => {
   }
 };
 
-const veriryOtp = async (req, res) => {
+const verifyPhone = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
-    const { code } = req.body;
-
-    if (!code) {
+    const { phone } = req.body;
+    if (!phone) {
       return res.status(400).json({
         status: "error",
-        message: "Veuillez fournir un code QR valide.",
+        message: "Veuillez fournir votre numéro de téléphone.",
       });
     }
 
-    // Recherche du client associé au QR code
-    const merchant = await Merchant.findOne({
-      attributes: [
-        "id",
-        "uuid",
-        "name",
-        "address",
-        "cni",
-        "rccm",
-        "activity",
-        "qrcode",
-        "isActive",
-      ],
-      where: { uuid: code },
-    });
-
-    if (!merchant) {
+    // Vérifier si le numéro de téléphone existe
+    const existingMerchant = await Merchant.findOne({ where: { phone } });
+    if (!existingMerchant) {
       return res.status(404).json({
         status: "error",
-        message:
-          "Cette carte n'existe pas ou n'est associée à aucun compte client.",
+        message: "Ce numéro de téléphone n'est pas enregistré sur notre plateforme.",
       });
     }
 
-    if (merchant.isActive) {
+    // Vérifier si le numéro de téléphone est déjà verifié
+    if (existingMerchant.verified) {
       return res.status(400).json({
         status: "error",
-        message:
-          "Votre compte est actuellement actif. Veuillez vous connecter en utilisant votre numéro de téléphone et votre mot de passe.",
+        message: "Ce numéro de téléphone a déjà été verifié.",
       });
     }
+    
+    const operatorPhone = operator.phone;
 
-    // Vérifier si le code est correct
-    const otpCode = merchant.uuid;
-    if (otpCode !== code) {
-      return res.status(400).json({
-        status: "error",
-        message: "Le code QR fourni est incorrect.",
-      });
+    // Vérifier si un code OTP non utilisé existe déjà pour cet opérateur
+    let authentication = await Authentication.findOne({
+      where: { merchantId: existingMerchant.id, isUsed: false },
+    });
+
+    let codeOtp;
+
+    if (authentication) {
+      // Si un code existe déjà et n'a pas été utilisé, on le réutilise
+      codeOtp = authentication.code;
+    } else {
+      // Sinon, générer un NOUVEAU code OTP (toujours 4 chiffres, sans commencer par 0)
+      codeOtp = Math.floor(1000 + Math.random() * 9000);
+
+      // Créer un nouvel OTP
+      authentication = await Authentication.create(
+        {
+          merchantId: existingMerchant.id,
+          code: codeOtp,
+          isUsed: false,
+        },
+        { transaction }
+      );
     }
-
-    // Supprimer 00242  au debut du phone
-    const newPhone = merchant.phone;
 
     // Préparation du message à envoyer
-    const message = `Votre numéro d'enregistrement est : ${otpCode}. Ne le partagez avec personne pour des raisons de securite.`;
+    const message = `Votre code de confirmation est : ${codeOtp}. Ne le partagez avec personne pour des raisons de sécurité.`;
 
     // Envoi du SMS via l'API Wirepick
-    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${newPhone}&text=${encodeURIComponent(
+    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${operatorPhone}&text=${encodeURIComponent(
       message
-    )}&from=YELLOWPAY`;
+    )}&from=LAPOINTE`;
 
     const response = await fetch(wirepickUrl);
     const responseBody = await response.text();
@@ -471,32 +471,33 @@ const veriryOtp = async (req, res) => {
     if (!response.ok) {
       return res.status(response.status).json({
         status: "error",
-        message:
-          "L'envoi du code de verification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
+        message: "L'envoi du code de vérification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
         details: responseBody,
       });
     }
 
-    // Génération d'un token JWT pour l'utilisateur
-    const token = jwt.sign({ id: merchant.id }, process.env.JWT_SECRET, {
-      expiresIn: "5m",
-    });
+    const token = jwt.sign({ id: existingMerchant.id }, process.env.JWT_SECRET);
 
+    await transaction.commit();
     return res.status(200).json({
       status: "success",
+      message: "Le code de vérification a été envoyé avec succès.",
       data: {
         token: token,
+        name: existingMerchant.name,
       },
     });
   } catch (error) {
-    console.error(`Error lors du scan de la carte client: ${error}`);
-    appendErrorLog(`Error lors du scan de la carte client: ${error}`);
+    await transaction.rollback();
+    console.error(`ERROR VERIFY PHONE: ${error}`);
+    appendErrorLog(`ERROR VERIFY PHONE: ${error}`);
     return res.status(500).json({
       status: "error",
-      message: "Une erreur est survenue lors du scan de la carte client.",
+      message:
+        "Une erreur est survenue lors de la vérification de votre numéro de téléphone. Veuillez réessayer ou contacter notre support pour obtenir de l'aide.",
     });
   }
-};
+}
 
 const vatidateOtp = async (req, res) => {
   try {
@@ -594,19 +595,11 @@ const vatidateOtp = async (req, res) => {
     authenticationCode.isUsed = true;
     await authenticationCode.save();
 
-    const tokenMerchant = jwt.sign(
-      { id: existingMerchant.id },
-      process.env.JWT_SECRET
-    );
-
       // Réponse avec succès
       return res.status(200).json({
         status: "success",
         message:
           "Votre code OTP a été vérifié avec succès. Vous pouvez maintenant poursuivre.",
-        data: {
-          token: tokenMerchant,
-        },
       });
   } catch (error) {
     console.error(`Error lors de la validation du code OTP: ${error}`);
@@ -618,4 +611,87 @@ const vatidateOtp = async (req, res) => {
   }
 };
 
-module.exports = { login, updatePassword, updateToken, transactions, destroy };
+const createPassword = async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir un mot de passe.",
+      });
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Votre session a expiré. Veuillez vous reconnecter.",
+      });
+    }
+
+    // Vérifie si l'en-tête commence par "Bearer "
+    if (!token.startsWith("Bearer ")) {
+      return res.status(401).json({
+        status: "error",
+        message: "Format de token invalide.",
+      });
+    }
+
+    // Extrait le token en supprimant le préfixe "Bearer "
+    const customToken = token.substring(7);
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(customToken, process.env.JWT_SECRET);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          status: "error",
+          message: "Votre session a expiré. Veuillez vous reconnecter.",
+        });
+      }
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    if (!decodedToken) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    const currentUserId = decodedToken.id;
+
+    const existingMerchant = await Merchant.findByPk(currentUserId);
+    if (!existingMerchant) {
+      return res.status(404).json({
+        status: "error",
+        message:
+          "Aucun compte correspondant trouvé. Veuillez vérifier vos informations ou créer un nouveau compte.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    existingMerchant.password = hashedPassword;
+    await existingMerchant.save();
+    
+    return res.status(200).json({
+      status: "success",
+      message: "Votre mot de passe a été créé avec succès.",
+    });
+  } catch (error) {
+    console.error(`Error lors de la création du mot de passe: ${error}`);
+    appendErrorLog(`Error lors de la création du mot de passe: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la création du mot de passe.",
+    });
+  }
+}
+
+module.exports = { login, updatePassword, updateToken, transactions, destroy, verifyPhone, vatidateOtp };

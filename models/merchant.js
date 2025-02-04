@@ -18,7 +18,6 @@ module.exports = (sequelize, DataTypes) => {
   Merchant.init({
     operatorId: DataTypes.INTEGER,
     subcategoryId: DataTypes.INTEGER,
-    activity: DataTypes.INTEGER,
     isActive: DataTypes.BOOLEAN,
     name: DataTypes.STRING,
     phone: DataTypes.STRING,
