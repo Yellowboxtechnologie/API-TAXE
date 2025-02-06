@@ -431,7 +431,7 @@ const verifyPhone = async (req, res) => {
       });
     }
     
-    const operatorPhone = operator.phone;
+    const merchantPhone = existingMerchant.phone;
 
     // Vérifier si un code OTP non utilisé existe déjà pour cet opérateur
     let authentication = await Authentication.findOne({
@@ -462,7 +462,7 @@ const verifyPhone = async (req, res) => {
     const message = `Votre code de confirmation est : ${codeOtp}. Ne le partagez avec personne pour des raisons de sécurité.`;
 
     // Envoi du SMS via l'API Wirepick
-    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${operatorPhone}&text=${encodeURIComponent(
+    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${merchantPhone}&text=${encodeURIComponent(
       message
     )}&from=LAPOINTE`;
 
