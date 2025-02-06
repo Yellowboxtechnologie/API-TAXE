@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 const { Merchant, Transaction, Authentication } = require("../models");
+const { sequelize } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
