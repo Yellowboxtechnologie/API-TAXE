@@ -695,4 +695,4 @@ const createPassword = async (req, res) => {
   }
 }
 
-module.exports = { login, updatePassword, updateToken, transactions, destroy, verifyPhone, vatidateOtp };
+module.exports = { login, updatePassword, updateToken, transactions, destroy, verifyPhone, vatidateOtp, createPassword };
