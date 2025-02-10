@@ -15,4 +15,7 @@ router.post("/create-operator",  adminController.createOperator);
 router.post("/create-category",  adminController.createCategory);
 router.post("/create-subcategory",  adminController.createSubCategory);
 
+router.get("/list-categories",  adminController.listCategories);
+router.get("/list-subcategories",  adminController.listSubCategories);
+
 module.exports = router;

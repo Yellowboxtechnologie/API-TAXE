@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { Admin, Operator, Category, SubCategory } = require("../models");
+const { Admin, Operator, Category, SubCategory, Merchant, Transaction } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -380,13 +380,12 @@ const createCategory = async (req, res) => {
     }
 
     // Création de la catégorie
-   await Category.create({ name });
+    await Category.create({ name });
 
     return res.status(201).json({
       status: "success",
       message: "Catégorie créée avec succès.",
     });
-
   } catch (error) {
     console.error(`ERROR CREATE CATEGORY: ${error}`);
     return res.status(500).json({
@@ -403,7 +402,8 @@ const createSubCategory = async (req, res) => {
     if (!name || !categoryId) {
       return res.status(400).json({
         status: "error",
-        message: "Le nom de la sous-catégorie et l'ID de la catégorie sont requis.",
+        message:
+          "Le nom de la sous-catégorie et l'ID de la catégorie sont requis.",
       });
     }
 
@@ -417,7 +417,9 @@ const createSubCategory = async (req, res) => {
     }
 
     // Vérifier si la sous-catégorie existe déjà dans cette catégorie
-    const existingSubCategory = await SubCategory.findOne({ where: { name, categoryId } });
+    const existingSubCategory = await SubCategory.findOne({
+      where: { name, categoryId },
+    });
     if (existingSubCategory) {
       return res.status(400).json({
         status: "error",
@@ -432,16 +434,275 @@ const createSubCategory = async (req, res) => {
       status: "success",
       message: "Sous-catégorie créée avec succès.",
     });
-
   } catch (error) {
     console.error(`ERROR CREATE SUBCATEGORY: ${error}`);
     return res.status(500).json({
       status: "error",
-      message: "Une erreur est survenue lors de la création de la sous-catégorie.",
+      message:
+        "Une erreur est survenue lors de la création de la sous-catégorie.",
     });
   }
 };
 
+const listCategories = async (req, res) => {
+  try {
+    const categories = await Category.findAll(
+      {
+        order: [["id", "ASC"]],
+      },
+      {
+        attributes: ["id", "name"],
+      }
+    );
+    return res.status(200).json({
+      status: "success",
+      data: categories,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST CATEGORIES: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des catégories.",
+    });
+  }
+};
+
+const listSubCategories = async (req, res) => {
+  try {
+    const { categoryId } = req.body;
+    const subCategories = await SubCategory.findAll(
+      { where: { categoryId } },
+      {
+        attributes: ["id", "name"],
+      }
+    );
+    return res.status(200).json({
+      status: "success",
+      data: subCategories,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST SUBCATEGORIES: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des sous-catégories.",
+    });
+  }
+};
+
+const listMerchant = async (req, res) => {
+  try {
+    const merchants = await Merchant.findAll(
+      {
+        order: [["id", "ASC"]],
+      },
+      {
+        attributes: ["id", "name", "phone", "address", "cni", "rccm"],
+      }
+    );
+    return res.status(200).json({
+      status: "success",
+      data: merchants,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST MERCHANTS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des marchands.",
+    });
+  }
+};
+
+const listMerchantByCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.body;
+    const merchants = await Merchant.findAll(
+      { where: { categoryId } },
+      {
+        attributes: ["id", "name", "phone", "address", "cni", "rccm"],
+      }
+    );
+    return res.status(200).json({
+      status: "success",
+      data: merchants,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST MERCHANTS BY CATEGORY: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des marchands.",
+    });
+  }
+};
+
+const listMerchantBySubCategory = async (req, res) => {
+  try {
+    const { subcategoryId } = req.body;
+    const merchants = await Merchant.findAll(
+      { where: { subcategoryId } },
+      {
+        attributes: ["id", "name", "phone", "address", "cni", "rccm"],
+      }
+    );
+
+    return res.status(200).json({
+      status: "success",
+      data: merchants,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST MERCHANTS BY SUBCATEGORY: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des marchands.",
+    });
+  }
+};
+
+const listMerchantsByOperator = async (req, res) => {
+  try {
+    const { operatorId } = req.body;
+    const merchants = await Merchant.findAll(
+      { where: { operatorId } },
+      {
+        attributes: ["id", "name", "phone", "address", "cni", "rccm"],
+      }
+    );
+
+    return res.status(200).json({
+      status: "success",
+      data: merchants,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST MERCHANTS BY OPERATOR: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des marchands.",
+    });
+  }
+};
+
+const listTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.findAll({
+      order: [["createdAt", "DESC"]],
+      attributes: ["id", "ticket", "amount", "createdAt"],
+    });
+    return res.status(200).json({
+      status: "success",
+      data: transactions,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST TRANSACTIONS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des transactions.",
+    });
+  }
+};
+
+const listTransactionsByOperator = async (req, res) => {
+  try {
+    const { operatorId } = req.body;
+    const transactions = await Transaction.findAll(
+      { order: [["createdAt", "DESC"]] },
+      { where: { operatorId } },
+      {
+        attributes: ["id", "ticket", "amount", "createdAt"],
+      }
+    );
+
+    return res.status(200).json({
+      status: "success",
+      data: transactions,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST TRANSACTIONS BY OPERATOR: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des transactions.",
+    });
+  }
+};
+
+const countTransactionsByOperator = async (req, res) => {
+  try {
+    const { operatorId } = req.body;
+    const count = await Transaction.count({ where: { operatorId } });
+    return res.status(200).json({
+      status: "success",
+      data: count,
+    });
+  } catch (error) {
+    console.error(`ERROR COUNT TRANSACTIONS BY OPERATOR: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors du comptage des transactions.",
+    });
+  }
+};
+
+const countTransactions = async (req, res) => {
+  try {
+    const count = await Transaction.count();
+    return res.status(200).json({
+      status: "success",
+      data: count,
+    });
+  } catch (error) {
+    console.error(`ERROR COUNT TRANSACTIONS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors du comptage des transactions.",
+    });
+  }
+};
+
+const countMerchants = async (req, res) => {
+  try {
+    const count = await Merchant.count();
+    return res.status(200).json({
+      status: "success",
+      data: count,
+    });
+  } catch (error) {
+    console.error(`ERROR COUNT MERCHANTS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors du comptage des marchands.",
+    });
+  }
+};
+
+const countOperators = async (req, res) => {
+  try {
+    const count = await Operator.count();
+    return res.status(200).json({
+      status: "success",
+      data: count,
+    });
+  } catch (error) {
+    console.error(`ERROR COUNT OPERATORS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors du comptage des opérateurs.",
+    });
+  }
+};
+
+const listAdmins = async (req, res) => {
+  try {
+    const admins = await Admin.findAll();
+    return res.status(200).json({
+      status: "success",
+      data: admins,
+    });
+  } catch (error) {
+    console.error(`ERROR LIST ADMINS: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la liste des administrateurs.",
+    });
+  }
+};
 
 module.exports = {
   login,
@@ -454,5 +715,18 @@ module.exports = {
   listActiveOperators,
   listInactiveOperators,
   createCategory,
-  createSubCategory
+  createSubCategory,
+  listCategories,
+  listSubCategories,
+  listMerchant,
+  listMerchantByCategory,
+  listMerchantBySubCategory,
+  listMerchantsByOperator,
+  countOperators,
+  countMerchants,
+  countTransactions,
+  countTransactionsByOperator,
+  listTransactions,
+  listTransactionsByOperator,
+  listAdmins,
 };
