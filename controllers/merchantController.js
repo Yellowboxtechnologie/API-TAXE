@@ -24,7 +24,7 @@ const login = async (req, res) => {
       });
     }
 
-    const merchant  = await Merchant.findOne({
+    const merchant = await Merchant.findOne({
       where: { phone },
       attributes: [
         "id",
@@ -35,7 +35,13 @@ const login = async (req, res) => {
         "rccm",
         "qrcode",
         "password",
-        "isActive"
+        "isActive",
+      ],
+      include: [
+        {
+          model: SubCategory,
+          as: "subCategory",
+        },
       ],
     });
 
@@ -78,6 +84,7 @@ const login = async (req, res) => {
       cni: merchant.cni,
       rccm: merchant.rccm,
       qrcode: merchant.qrcode,
+      subcategory: merchant.subCategory.name,
       token: token,
     };
 
@@ -420,7 +427,8 @@ const verifyPhone = async (req, res) => {
     if (!existingMerchant) {
       return res.status(404).json({
         status: "error",
-        message: "Ce numéro de téléphone n'est pas enregistré sur notre plateforme.",
+        message:
+          "Ce numéro de téléphone n'est pas enregistré sur notre plateforme.",
       });
     }
 
@@ -431,7 +439,7 @@ const verifyPhone = async (req, res) => {
         message: "Ce numéro de téléphone a déjà été verifié.",
       });
     }
-    
+
     const merchantPhone = existingMerchant.phone;
 
     // Vérifier si un code OTP non utilisé existe déjà pour cet opérateur
@@ -473,7 +481,8 @@ const verifyPhone = async (req, res) => {
     if (!response.ok) {
       return res.status(response.status).json({
         status: "error",
-        message: "L'envoi du code de vérification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
+        message:
+          "L'envoi du code de vérification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
         details: responseBody,
       });
     }
@@ -499,7 +508,7 @@ const verifyPhone = async (req, res) => {
         "Une erreur est survenue lors de la vérification de votre numéro de téléphone. Veuillez réessayer ou contacter notre support pour obtenir de l'aide.",
     });
   }
-}
+};
 
 const vatidateOtp = async (req, res) => {
   try {
@@ -579,7 +588,7 @@ const vatidateOtp = async (req, res) => {
     // Vérifie si un code OTP non utilisé correspond au client et au code fourni
     const authenticationCode = await Authentication.findOne({
       where: {
-        merchantId: currentUserId,    
+        merchantId: currentUserId,
         code: code,
         isUsed: false,
       },
@@ -597,12 +606,12 @@ const vatidateOtp = async (req, res) => {
     authenticationCode.isUsed = true;
     await authenticationCode.save();
 
-      // Réponse avec succès
-      return res.status(200).json({
-        status: "success",
-        message:
-          "Votre code OTP a été vérifié avec succès. Vous pouvez maintenant poursuivre.",
-      });
+    // Réponse avec succès
+    return res.status(200).json({
+      status: "success",
+      message:
+        "Votre code OTP a été vérifié avec succès. Vous pouvez maintenant poursuivre.",
+    });
   } catch (error) {
     console.error(`Error lors de la validation du code OTP: ${error}`);
     appendErrorLog(`Error lors de la validation du code OTP: ${error}`);
@@ -681,7 +690,7 @@ const createPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     existingMerchant.password = hashedPassword;
     await existingMerchant.save();
-    
+
     return res.status(200).json({
       status: "success",
       message: "Votre mot de passe a été créé avec succès.",
@@ -694,6 +703,15 @@ const createPassword = async (req, res) => {
       message: "Une erreur est survenue lors de la création du mot de passe.",
     });
   }
-}
+};
 
-module.exports = { login, updatePassword, updateToken, transactions, destroy, verifyPhone, vatidateOtp, createPassword };
+module.exports = {
+  login,
+  updatePassword,
+  updateToken,
+  transactions,
+  destroy,
+  verifyPhone,
+  vatidateOtp,
+  createPassword,
+};
