@@ -29,12 +29,13 @@ const login = async (req, res) => {
       attributes: [
         "id",
         "name",
+        "phone",
         "address",
         "cni",
         "rccm",
-        "activity",
-        "password",
         "qrcode",
+        "password",
+        "isActive"
       ],
     });
 
@@ -72,10 +73,10 @@ const login = async (req, res) => {
 
     const merchantResponse = {
       name: merchant.name,
+      phone: merchant.phone,
       address: merchant.address,
       cni: merchant.cni,
       rccm: merchant.rccm,
-      activity: merchant.activity,
       qrcode: merchant.qrcode,
       token: token,
     };

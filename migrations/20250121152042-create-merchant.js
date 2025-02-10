@@ -32,7 +32,7 @@ module.exports = {
       isActive: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
-        defaultValue: false
+        defaultValue: true
       },
       name: {
         type: Sequelize.STRING,
