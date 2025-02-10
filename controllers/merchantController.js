@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
-const { Merchant, Transaction, Authentication } = require("../models");
+const { Merchant, Transaction, Authentication, SubCategory } = require("../models");
 const { sequelize } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
@@ -40,7 +40,7 @@ const login = async (req, res) => {
       include: [
         {
           model: SubCategory,
-          as: "subCategory",
+          attributes: ["id", "name"],
         },
       ],
     });
@@ -84,7 +84,7 @@ const login = async (req, res) => {
       cni: merchant.cni,
       rccm: merchant.rccm,
       qrcode: merchant.qrcode,
-      subcategory: merchant.subCategory.name,
+      subcategoryName: merchant.SubCategory.name,
       token: token,
     };
 
