@@ -24,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     address: DataTypes.STRING,
     cni: DataTypes.STRING,
     rccm: DataTypes.STRING,
+    location: DataTypes.STRING,
     password: DataTypes.STRING,
     qrcode: DataTypes.STRING,
     token: DataTypes.STRING

@@ -62,6 +62,10 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
+      location: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
       token: {
         type: Sequelize.STRING,
         allowNull: true

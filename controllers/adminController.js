@@ -496,7 +496,7 @@ const listMerchant = async (req, res) => {
         order: [["id", "ASC"]],
       },
       {
-        attributes: ["id", "name", "phone", "address", "cni", "rccm"],
+        attributes: ["id", "name", "phone", "address", "cni", "rccm", "location"],
       }
     );
     return res.status(200).json({
@@ -540,7 +540,7 @@ const listMerchantBySubCategory = async (req, res) => {
     const merchants = await Merchant.findAll(
       { where: { subcategoryId } },
       {
-        attributes: ["id", "name", "phone", "address", "cni", "rccm"],
+        attributes: ["id", "name", "phone", "address", "cni", "rccm", "location"],
       }
     );
 
@@ -563,7 +563,7 @@ const listMerchantsByOperator = async (req, res) => {
     const merchants = await Merchant.findAll(
       { where: { operatorId } },
       {
-        attributes: ["id", "name", "phone", "address", "cni", "rccm"],
+        attributes: ["id", "name", "phone", "address", "cni", "rccm", "location"],
       }
     );
 
