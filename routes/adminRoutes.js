@@ -18,4 +18,18 @@ router.post("/create-subcategory",  adminController.createSubCategory);
 router.get("/list-categories",  adminController.listCategories);
 router.get("/list-subcategories",  adminController.listSubCategories);
 
+router.get("/list-merchants",  adminController.listMerchant);
+router.get("/list-merchants-by-operator",  adminController.listMerchantsByOperator);
+router.get("/list-merchants-by-category",  adminController.listMerchantByCategory);
+router.get("/list-merchants-by-subcategory",  adminController.listMerchantBySubCategory);
+
+router.get("/count-operators",  adminController.countOperators);
+router.get("/count-merchants",  adminController.countMerchants);
+router.get("/count-transactions",  adminController.countTransactions);
+router.get("/count-transactions-by-operator",  adminController.countTransactionsByOperator);
+router.get("/list-transactions",  adminController.listTransactions);
+router.get("/list-transactions-by-operator",  adminController.listTransactionsByOperator);
+router.get("/list-admins",  adminController.listAdmins);
+
+
 module.exports = router;
