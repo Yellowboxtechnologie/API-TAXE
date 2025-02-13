@@ -17,6 +17,7 @@ router.post("/create-subcategory", adminController.createSubCategory);
 
 router.get("/list-categories", adminController.listCategories);
 router.get("/list-subcategories", adminController.listSubCategories);
+router.post("/list-subcategories", adminController.listSubCategories);
 
 router.get("/list-merchants", adminController.listMerchant);
 router.get("/list-merchants-by-operator",adminController.listMerchantsByOperator);
