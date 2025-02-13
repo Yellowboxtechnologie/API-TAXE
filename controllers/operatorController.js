@@ -385,8 +385,20 @@ const lastTransactions = async (req, res) => {
       });
     }
 
+    // Définition de la plage de temps pour la journée courante
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Récupération des transactions du jour
     const transactions = await Transaction.findAll({
-      where: { operatorId },
+      where: {
+        operatorId,
+        createdAt: {
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
       attributes: [
         "merchantId",
         "operatorId",
@@ -398,18 +410,14 @@ const lastTransactions = async (req, res) => {
       include: [
         {
           model: Merchant,
-          foreignKey: "merchantId",
           attributes: ["id", "name", "phone", "address"],
         },
         {
           model: PaymentMethod,
-          foreignKey: "paymentId",
           attributes: ["id", "name"],
         },
       ],
-      limit: 10,
       order: [["createdAt", "DESC"]],
-      raw: false,
     });
 
     const formattedTransactions = transactions.map((transaction) => {
@@ -440,10 +448,10 @@ const lastTransactions = async (req, res) => {
       } ${year}`;
 
       return {
-        name: transaction.merchant.name,
-        phone: transaction.merchant.phone,
-        address: transaction.merchant.address,
-        paymentMethod: transaction.paymentMethod.name,
+        name: transaction.Merchant.name,
+        phone: transaction.Merchant.phone,
+        address: transaction.Merchant.address,
+        paymentMethod: transaction.PaymentMethod.name,
         ticket: transaction.ticket,
         amount: transaction.amount,
         time: frenchTime,
