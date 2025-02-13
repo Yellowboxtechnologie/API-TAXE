@@ -172,42 +172,16 @@ const confirmAccount = async (req, res) => {
 
 const validationAccount = async (req, res) => {
   try {
-    const token = req.headers.authorization;
-    const { code } = req.body;
-    if (!token) {
-      return res
-        .status(401)
-        .json({ status: "error", message: "Token non fourni." });
-    }
-
-    // Vérifie si l'en-tête commence par "Bearer "
-    if (!token.startsWith("Bearer ")) {
-      return res.status(401).json({
+    const { code, phone } = req.body;
+    if(!phone) {
+      return res.status(400).json({
         status: "error",
-        message: "Format de token invalide.",
+        message: "Veuillez fournir le numéro de téléphone.",
       });
     }
 
-    // Extrait le token en supprimant le préfixe "Bearer "
-    const customToken = token.substring(7);
-    let decodedToken;
 
-    try {
-      decodedToken = jwt.verify(customToken, process.env.JWT_SECRET);
-    } catch (error) {
-      if (error.name === "TokenExpiredError") {
-        return res
-          .status(401)
-          .json({ status: "error", message: "TokenExpiredError" });
-      }
-      return res
-        .status(401)
-        .json({ status: "error", message: "Token invalide." });
-    }
-
-    const operatorId = decodedToken.id;
-
-    const existingOperator = await Operator.findByPk(operatorId);
+    const existingOperator = await Operator.findOne({ where: { phone } });
     if (!existingOperator) {
       return res.status(404).json({
         status: "error",
