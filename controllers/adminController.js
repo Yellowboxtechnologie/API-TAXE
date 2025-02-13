@@ -143,7 +143,7 @@ const createOperator = async (req, res) => {
     const newPassword = `${password}`;
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const message = `${name} votre compte a ete cree avec succes. Votre mot de passe est : ${password}. Ne le partagez avec personne pour des raisons de securite.`;
+    const message = `Hello, ${name} votre compte a ete cree avec succes. Votre mot de passe est : ${password}. Ne le partagez avec personne pour des raisons de securite.`;
 
     // Envoi du SMS via l'API Wirepick
     const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${phone}&text=${encodeURIComponent(

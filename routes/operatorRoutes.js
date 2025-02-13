@@ -9,5 +9,6 @@ router.post("/confirm-account", operatorController.confirmAccount);
 router.post("/validation-account", operatorController.validationAccount);
 router.post("/create-merchant", operatorController.createMerchant);
 router.put("/update-password", operatorController.updatePassword);
+router.get("/balance", operatorController.curentAmount);
 
 module.exports = router;

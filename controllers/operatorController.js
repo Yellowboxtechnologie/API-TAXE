@@ -9,7 +9,7 @@ const {
   SubCategory,
   Authentication,
 } = require("../models");
-const { sequelize } = require("../models");
+const { sequelize, Op } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -742,6 +742,98 @@ const createMerchant = async (req, res) => {
   }
 };
 
+const curentAmount = async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { password } = req.body;
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Votre session a expiré. Veuillez vous reconnecter.",
+      });
+    }
+
+    // Vérifie si l'en-tête commence par "Bearer "
+    if (!token.startsWith("Bearer ")) {
+      return res.status(401).json({
+        status: "error",
+        message: "Format de token invalide.",
+      });
+    }
+
+    // Extrait le token en supprimant le préfixe "Bearer "
+    const customToken = token.substring(7);
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(customToken, process.env.JWT_SECRET);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          status: "error",
+          message: "Votre session a expiré. Veuillez vous reconnecter.",
+        });
+      }
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    if (!decodedToken) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    const currentOperatorId = decodedToken.id;
+
+    const existingOperator = await Operator.findByPk(currentOperatorId);
+    if (!existingOperator) {
+      return res.status(404).json({
+        status: "error",
+        message:
+          "Aucun compte correspondant trouvé. Veuillez vérifier vos informations ou créer un nouveau compte.",
+      });
+    }
+
+    // Récupérer la date du jour à minuit
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // Récupérer la date actuelle
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Calculer le montant total des transactions du jour
+    const totalAmount = await Transaction.sum("amount", {
+      where: {
+        createdAt: {
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      data: {
+        amount: totalAmount || 0,
+      },
+    });
+    
+  } catch (error) {
+    console.error(`ERROR SOLDE ACCOUNT: ${error}`);
+    appendErrorLog(`ERROR SOLDE ACCOUNT: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue lors de la SOLDE du compte.",
+    });
+  }
+}
+
 module.exports = {
   login,
   transactions,
@@ -750,4 +842,5 @@ module.exports = {
   confirmAccount,
   validationAccount,
   updatePassword,
+  curentAmount
 };
