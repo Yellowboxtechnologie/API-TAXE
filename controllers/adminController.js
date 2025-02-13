@@ -140,6 +140,8 @@ const createOperator = async (req, res) => {
     }
 
     const password = Math.floor(1000 + Math.random() * 9000);
+    const newPassword = `${password}`;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     const message = `${name} votre compte a ete cree avec succes. Votre mot de passe est : ${password}. Ne le partagez avec personne pour des raisons de securite.`;
 
@@ -159,8 +161,6 @@ const createOperator = async (req, res) => {
       });
     }
     console.log(`response ok ${responseBody}`);
-
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     await Operator.create({
       name,
