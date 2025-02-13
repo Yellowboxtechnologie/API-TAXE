@@ -139,9 +139,32 @@ const createOperator = async (req, res) => {
       });
     }
 
+    const password = Math.floor(1000 + Math.random() * 9000);
+
+    const message = `${name} votre compte a ete cree avec succes. Votre mot de passe est : ${password}. Ne le partagez avec personne pour des raisons de securite.`;
+
+    // Envoi du SMS via l'API Wirepick
+    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${phone}&text=${encodeURIComponent(
+      message
+    )}&from=LAPOINTE`;
+
+    const response = await fetch(wirepickUrl);
+    const responseBody = await response.text();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        status: "error",
+        message: "L'envoi du code de vérification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
+        details: responseBody,
+      });
+    }
+    console.log(`response ok ${responseBody}`);
+
     await Operator.create({
       name,
       phone,
+      password,
+      isActive: true,
     });
     return res.status(200).json({
       status: "success",
