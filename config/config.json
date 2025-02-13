@@ -21,7 +21,7 @@
     "username": "postgres",
     "password": "Admin@Nyota@2024Cizfac",
     "database": "yellopay_production",
-    "host": "127.0.0.1",
+    "host": "180.149.196.70",
     "dialect": "postgres",
     "port": 5432,
     "timezone": "Africa/Brazzaville"

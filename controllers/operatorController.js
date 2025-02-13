@@ -9,7 +9,8 @@ const {
   SubCategory,
   Authentication,
 } = require("../models");
-const { sequelize, Op } = require("../models");
+const { sequelize } = require("../models");
+const { Op } = require("sequelize");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -829,6 +830,89 @@ const curentAmount = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Une erreur est survenue lors de la SOLDE du compte.",
+    });
+  }
+}
+
+const pay = async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { phone, amount } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le numéro de téléphone du marchand.",
+      });
+    }
+
+    if (!amount) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir le montant de l'opération.",
+      });
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Votre session a expiré. Veuillez vous reconnecter.",
+      });
+    }
+
+    // Vérifie si l'en-tête commence par "Bearer "
+    if (!token.startsWith("Bearer ")) {
+      return res.status(401).json({
+        status: "error",
+        message: "Format de token invalide.",
+      });
+    }
+
+    // Extrait le token en supprimant le préfixe "Bearer "
+    const customToken = token.substring(7);
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(customToken, process.env.JWT_SECRET);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          status: "error",
+          message: "Votre session a expiré. Veuillez vous reconnecter.",
+        });
+      }
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    if (!decodedToken) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Le token fourni est incorrect. Veuillez vérifier le token et réessayer.",
+      });
+    }
+
+    const currentOperatorId = decodedToken.id;
+
+    const existingOperator = await Operator.findByPk(currentOperatorId);
+    if (!existingOperator) {
+      return res.status(404).json({
+        status: "error",
+        message:
+          "Aucun compte correspondant trouvé. Veuillez vérifier vos informations ou créer un nouveau compte.",
+      });
+    }
+    
+  } catch (error) {
+    console.log(`ERROR PAY: ${error}`);
+    appendErrorLog(`ERROR PAY: ${error}`);
+    return res.status(500).json({
+      status: "error",
+      message: "Une erreur est survenue. Veuillez réessayer plus tard.",
     });
   }
 }
