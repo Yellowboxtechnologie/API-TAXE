@@ -139,7 +139,7 @@ const confirmAccount = async (req, res) => {
     // Envoi du SMS via l'API Wirepick
     const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${operatorPhone}&text=${encodeURIComponent(
       message
-    )}&from=YELLOWPAY`;
+    )}&from=LAPOINTE`;
 
     const response = await fetch(wirepickUrl);
     const responseBody = await response.text();
