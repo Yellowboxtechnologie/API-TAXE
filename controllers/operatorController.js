@@ -745,7 +745,6 @@ const createMerchant = async (req, res) => {
 const curentAmount = async (req, res) => {
   try {
     const token = req.headers.authorization;
-    const { password } = req.body;
     if (!token) {
       return res.status(401).json({
         status: "error",
