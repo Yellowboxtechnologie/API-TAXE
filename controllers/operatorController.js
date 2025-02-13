@@ -914,6 +914,38 @@ const pay = async (req, res) => {
           "Aucun compte correspondant trouvé. Veuillez vérifier vos informations ou créer un nouveau compte.",
       });
     }
+
+    const existingMerchant = await Merchant.findOne({ where: { phone } });
+    if (!existingMerchant) {
+      return res.status(404).json({
+        status: "error",
+        message: "Aucun compte marchand trouve.",
+      });
+    }
+
+    const generateUniqueTicket = () => {
+      const prefix = "CCIAM";
+      const timestamp = Date.now().toString(36); // Convertir le timestamp en base 36
+      const randomString = Math.random().toString(36).substring(2, 8); // Générer une chaîne aléatoire
+    
+      return `TICKET-${prefix}-${timestamp}-${randomString}`;
+    };
+    
+    // Exemple d'utilisation
+    const uniqueTicket = generateUniqueTicket();
+
+    const transaction = await Transaction.create({
+      merchantId: existingMerchant.id,
+      operatorId: existingOperator.id,
+      amount: amount,
+      ticket: uniqueTicket,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Paiement effectué avec succès.",
+      data: transaction,
+    });
     
   } catch (error) {
     console.log(`ERROR PAY: ${error}`);
@@ -925,6 +957,8 @@ const pay = async (req, res) => {
   }
 }
 
+
+
 module.exports = {
   login,
   transactions,
@@ -933,5 +967,6 @@ module.exports = {
   confirmAccount,
   validationAccount,
   updatePassword,
-  curentAmount
+  curentAmount,
+  pay,
 };
