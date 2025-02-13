@@ -34,6 +34,10 @@ module.exports = {
         allowNull: false,
         defaultValue: true
       },
+      location: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
       name: {
         type: Sequelize.STRING,
         allowNull: false

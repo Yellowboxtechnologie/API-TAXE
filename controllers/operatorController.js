@@ -607,6 +607,7 @@ const createMerchant = async (req, res) => {
     const token = req.headers.authorization;
     const {
       subcategoryId,
+      location,
       name,
       phone,
       address,
@@ -618,6 +619,13 @@ const createMerchant = async (req, res) => {
       return res.status(400).json({
         status: "error",
         message: "Veuillez fournir le nom du marchant.",
+      });
+    }
+
+    if (!location) {
+      return res.status(400).json({
+        status: "error",
+        message: "Veuillez fournir la localisation du marchant.",
       });
     }
 
@@ -729,6 +737,7 @@ const createMerchant = async (req, res) => {
     await Merchant.create({
       operatorId: operator.id,
       subcategoryId: subcategoryId,
+      location,
       name,
       phone,
       address,

@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     subcategoryId: DataTypes.INTEGER,
     isActive: DataTypes.BOOLEAN,
     name: DataTypes.STRING,
+    location: DataTypes.STRING,
     phone: DataTypes.STRING,
     address: DataTypes.STRING,
     cni: DataTypes.STRING,
