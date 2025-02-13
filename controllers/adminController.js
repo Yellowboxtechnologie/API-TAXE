@@ -160,10 +160,12 @@ const createOperator = async (req, res) => {
     }
     console.log(`response ok ${responseBody}`);
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     await Operator.create({
       name,
       phone,
-      password,
+      password: hashedPassword,
       isActive: true,
     });
     return res.status(200).json({
