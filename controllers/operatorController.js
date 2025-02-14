@@ -971,7 +971,7 @@ const pay = async (req, res) => {
     });
 
 
-    const message = `Hello, ${existingMerchant.name}. Vous avez paye ${amount} FCFA. Votre facture est : ${uniqueTicket}`;
+    const message = `Hello, ${existingMerchant.name}. Vous avez paye ${amount} FCFA. En date du ${new Date().toLocaleDateString('fr-FR')}. ID: ${uniqueTicket}`;
 
     // Envoi du SMS via l'API Wirepick
     const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${phone}&text=${encodeURIComponent(
