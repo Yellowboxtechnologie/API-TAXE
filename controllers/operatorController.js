@@ -525,30 +525,32 @@ const transactions = async (req, res) => {
     const transactions = await Transaction.findAll({
       where: { operatorId },
       attributes: [
-        "merchantId",
-        "operatorId",
-        "paymentId",
-        "ticket",
-        "amount",
-        "createdAt",
+        'merchantId',
+        'operatorId',
+        'paymentId',
+        'ticket',
+        'amount',
+        'createdAt',
       ],
       include: [
         {
           model: Merchant,
-          foreignKey: "merchantId",
-          attributes: ["id", "name", "phone", "address"],
+          attributes: ['id', 'name', 'phone', 'address'],
         },
         {
           model: PaymentMethod,
-          foreignKey: "paymentId",
-          attributes: ["id", "name"],
+          attributes: ['id', 'name'],
         },
       ],
-      order: [["createdAt", "DESC"]],
-      raw: false,
+      order: [['createdAt', 'DESC']],
     });
 
     const formattedTransactions = transactions.map((transaction) => {
+      const merchantName = transaction.merchant ? transaction.merchant.name : 'Unknown Merchant';
+      const merchantPhone = transaction.merchant ? transaction.merchant.phone : 'N/A';
+      const merchantAddress = transaction.merchant ? transaction.merchant.address : 'N/A';
+      const paymentMethodName = transaction.paymentMethod ? transaction.paymentMethod.name : 'Unknown Payment Method';
+      
       const timeOptions = {
         hour: "2-digit",
         minute: "2-digit",
@@ -576,10 +578,10 @@ const transactions = async (req, res) => {
       } ${year}`;
 
       return {
-        name: transaction.merchant.name,
-        phone: transaction.merchant.phone,
-        address: transaction.merchant.address,
-        paymentMethod: transaction.paymentMethod.name,
+        name: merchantName,
+        phone: merchantPhone,
+        address: merchantAddress,
+        paymentMethod: paymentMethodName,
         ticket: transaction.ticket,
         amount: transaction.amount,
         time: frenchTime,
