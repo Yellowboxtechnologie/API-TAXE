@@ -525,67 +525,38 @@ const transactions = async (req, res) => {
     const transactions = await Transaction.findAll({
       where: { operatorId },
       attributes: [
-        'merchantId',
-        'operatorId',
-        'paymentId',
-        'ticket',
-        'amount',
-        'createdAt',
+        "merchantId",
+        "operatorId",
+        "paymentId",
+        "ticket",
+        "amount",
+        "createdAt",
       ],
       include: [
         {
           model: Merchant,
-          attributes: ['id', 'name', 'phone', 'address'],
+          attributes: ["id", "name", "phone", "address"],
         },
         {
           model: PaymentMethod,
-          attributes: ['id', 'name'],
+          attributes: ["id", "name"],
         },
       ],
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
+      raw: false,
     });
 
     const formattedTransactions = transactions.map((transaction) => {
-      const merchantName = transaction.merchant ? transaction.merchant.name : 'Unknown Merchant';
-      const merchantPhone = transaction.merchant ? transaction.merchant.phone : 'N/A';
-      const merchantAddress = transaction.merchant ? transaction.merchant.address : 'N/A';
-      const paymentMethodName = transaction.paymentMethod ? transaction.paymentMethod.name : 'Unknown Payment Method';
-      
-      const timeOptions = {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Africa/Brazzaville",
-      };
-      const frenchTime = transaction.createdAt
-        .toLocaleTimeString("fr-FR", timeOptions)
-        .replace(":", "H");
-
-      const dateOptions = {
-        weekday: "short",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "Africa/Brazzaville",
-      };
-      const rawDate = transaction.createdAt.toLocaleDateString(
-        "fr-FR",
-        dateOptions
-      );
-      const [weekday, day, month, year] = rawDate.split(" ");
-      const frenchDate = `${weekday} ${day} ${
-        month.charAt(0).toUpperCase() + month.slice(1)
-      } ${year}`;
-
+      // Convertir l'instance Sequelize en objet JS simple
+      const data = transaction.toJSON();
       return {
-        name: merchantName,
-        phone: merchantPhone,
-        address: merchantAddress,
-        paymentMethod: paymentMethodName,
-        ticket: transaction.ticket,
-        amount: transaction.amount,
-        time: frenchTime,
-        date: frenchDate,
+        ticket: data.ticket,
+        amount: data.amount,
+        createdAt: data.createdAt,
+        merchant: data.Merchant.name,
+        phone: data.Merchant.phone,
+        address: data.Merchant.address,
+        paymentMethod: data.PaymentMethod.name,
       };
     });
 
