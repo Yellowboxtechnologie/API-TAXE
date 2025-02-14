@@ -954,9 +954,9 @@ const pay = async (req, res) => {
     const generateUniqueTicket = () => {
       const prefix = "CCIAM";
       const timestamp = Date.now().toString(36); // Convertir le timestamp en base 36
-      const randomString = Math.random().toString(36).substring(2, 8); // Générer une chaîne aléatoire
+      const randomString = Math.random().toString(36).substring(2, 3); // Générer une chaîne aléatoire
     
-      return `TICKET-${prefix}-${timestamp}-${randomString}`;
+      return `TICKET-${prefix}-${timestamp}${randomString}`;
     };
     
     // Exemple d'utilisation
@@ -966,7 +966,7 @@ const pay = async (req, res) => {
       merchantId: existingMerchant.id,
       operatorId: existingOperator.id,
       amount: amount,
-      ticket: uniqueTicket,
+      ticket: uniqueTicket.toUpperCase(),
       paymentId: 1,
     });
 
