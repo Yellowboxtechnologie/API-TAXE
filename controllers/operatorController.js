@@ -967,6 +967,7 @@ const pay = async (req, res) => {
       operatorId: existingOperator.id,
       amount: amount,
       ticket: uniqueTicket,
+      paymentId: 1,
     });
 
 
