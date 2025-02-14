@@ -746,6 +746,25 @@ const createMerchant = async (req, res) => {
       qrcode: uuidv4(),
     });
 
+    const message = `CCIAM. ${name}. Vous avez été enregistré avec succès sur notre plateforme de paiement.`;
+
+    // Envoi du SMS via l'API Wirepick
+    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${phone}&text=${encodeURIComponent(
+      message
+    )}&from=LAPOINTE`;
+
+    const response = await fetch(wirepickUrl);
+    const responseBody = await response.text();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        status: "error",
+        message: "L'envoi du code de vérification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
+        details: responseBody,
+      });
+    }
+    console.log(`response ok ${responseBody}`);
+
     return res.status(201).json({
       status: "success",
       message: "Le marchand à bien été crée avec succès.",
@@ -949,6 +968,26 @@ const pay = async (req, res) => {
       amount: amount,
       ticket: uniqueTicket,
     });
+
+
+    const message = `Hello, ${existingMerchant.name}. Vous avez paye ${amount} FCFA. Votre facture est : ${uniqueTicket}`;
+
+    // Envoi du SMS via l'API Wirepick
+    const wirepickUrl = `https://api.wirepick.com/httpsms/send?client=nyota242&password=Nyota@2024&phone=242${phone}&text=${encodeURIComponent(
+      message
+    )}&from=LAPOINTE`;
+
+    const response = await fetch(wirepickUrl);
+    const responseBody = await response.text();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        status: "error",
+        message: "L'envoi du code de vérification a échoué. Veuillez vérifier votre connexion ou réessayer plus tard.",
+        details: responseBody,
+      });
+    }
+    console.log(`response ok ${responseBody}`);
 
     return res.status(200).json({
       status: "success",
