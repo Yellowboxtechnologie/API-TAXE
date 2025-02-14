@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { Admin, Operator, Category, SubCategory, Merchant, Transaction } = require("../models");
+const { Admin, Operator, Category, SubCategory, Merchant, Transaction, PaymentMethod } = require("../models");
 const { appendErrorLog } = require("../utils/logging");
 
 const login = async (req, res) => {
@@ -584,7 +584,7 @@ const listMerchantBySubCategory = async (req, res) => {
 
 const listMerchantsByOperator = async (req, res) => {
   try {
-    const { operatorId } = req.body;
+    const operatorId = req.headers.operatorid;
     const merchants = await Merchant.findAll(
       { where: { operatorId } },
       {
@@ -609,11 +609,41 @@ const listTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.findAll({
       order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: Merchant,
+          attributes: ["name"],
+        },
+        {
+          model: Operator,
+          attributes: ["name"],
+        },
+        {
+          model: PaymentMethod,
+          attributes: ["name"],
+        },
+      ],
       attributes: ["id", "ticket", "amount", "createdAt"],
     });
+
+    const formattedTransactions = transactions.map((transaction) => {
+      return {
+        id: transaction.id,
+        ticket: transaction.ticket,
+        amount: transaction.amount,
+        createdAt: transaction.createdAt,
+        merchantId: transaction.merchantId,
+        operatorId: transaction.operatorId,
+        paymentId: transaction.paymentId,
+        merchantName: transaction.Merchant.name,
+        operatorName: transaction.Operator.name,
+        paymentName: transaction.PaymentMethod.name,
+      };
+    });
+
     return res.status(200).json({
       status: "success",
-      data: transactions,
+      data: formattedTransactions,
     });
   } catch (error) {
     console.error(`ERROR LIST TRANSACTIONS: ${error}`);
