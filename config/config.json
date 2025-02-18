@@ -1,7 +1,7 @@
 {
   "development": {
    "username": "postgres",
-    "password": "Admin@Nyota@2024Cizfac",
+    "password": "ObhM3bdE83O",
     "database": "yellopay_development",
     "host": "127.0.0.1",
     "dialect": "postgres",
@@ -10,7 +10,7 @@
   },
   "test": {
     "username": "postgres",
-    "password": "Admin@Nyota@2024Cizfac",
+    "password": "ObhM3bdE83O",
     "database": "yellopay_test",
     "host": "127.0.0.1",
     "dialect": "postgres",
@@ -19,7 +19,7 @@
   },
   "production": {
     "username": "postgres",
-    "password": "Admin@Nyota@2024Cizfac",
+    "password": "ObhM3bdE83O",
     "database": "yellopay_production",
     "host": "127.0.0.1",
     "dialect": "postgres",
