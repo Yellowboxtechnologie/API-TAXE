@@ -11,13 +11,12 @@ module.exports = {
   deploy: {
     production: {
       user: "root",
-      host: "180.149.196.70",
+      host: "180.149.196.12",
       ref: "origin/main",
       repo: "https://github.com/Yellowboxtechnologie/API-TAXE.git",
       path: "/root/API/CCIAM",
       "pre-deploy-local": "",
-      "post-deploy":
-        "npm install && pm2 reload ecosystem.config.js --env production",
+      "post-deploy": "npm install && pm2 reload ecosystem.config.js --env production",
       "pre-setup": "",
     },
   },

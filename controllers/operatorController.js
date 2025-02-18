@@ -549,6 +549,7 @@ const transactions = async (req, res) => {
     const formattedTransactions = transactions.map((transaction) => {
       // Convertir l'instance Sequelize en objet JS simple
       const data = transaction.toJSON();
+
       return {
         ticket: data.ticket,
         amount: data.amount,
